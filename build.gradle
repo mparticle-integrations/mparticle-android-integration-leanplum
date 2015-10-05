@@ -1,0 +1,18 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.mparticle:android-kit-plugin:+'
+    }
+}
+
+apply plugin: 'com.mparticle.kit'
+
+repositories {
+    maven { url 'http://www.leanplum.com/leanplum-sdks/' }
+}
+dependencies {
+    compile 'com.leanplum:Leanplum:1.2.+'
+}
