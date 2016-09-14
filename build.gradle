@@ -14,5 +14,5 @@ repositories {
     maven { url 'http://www.leanplum.com/leanplum-sdks/' }
 }
 dependencies {
-    compile 'com.leanplum:Leanplum:1.2.+'
+    compile 'com.leanplum:Leanplum:[1.2,1.3)'
 }
