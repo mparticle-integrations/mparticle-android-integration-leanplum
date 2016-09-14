@@ -4,16 +4,29 @@ This repository contains the [Leanplum](https://www.leanplum.com/) integration f
 
 ### Adding the integration
 
-1. [Enable the integration](https://app.mparticle.com/providers) for your mParticle app.
-2. Add the kit dependency to your project. Kits are all made available via Maven Central, you can add them to your project just by adding their maven artifact (ex. `com.mparticle:android-<integration-name>-kit`). [See here for the current list of all kits](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.mparticle%22).
-3. The Leanplum Kit additionally requires that you add Leanplum's Maven server to your build.gradle:
+1. The Leanplum Kit requires that you add Appboy's Maven server to your buildscript:
 
     ```
     repositories {
-        maven { url 'http://www.leanplum.com/leanplum-sdks/' }
+        maven { url "http://www.leanplum.com/leanplum-sdks/" }
+        ...
     }
     ```
-4. If you haven't already added it, the core mParticle Android SDK will automatically be pulled in as a dependency of the kit. Follow the quick start of the mParticle Core SDK, then re-build and launch your app, and verify that you see `"<Integration Name> detected"` in the output of `adb logcat`.
+
+2. Add the kit dependency to your app's build.gradle:
+
+    ```groovy
+    dependencies {
+        compile 'com.mparticle:android-leanplum-kit:4+'
+    }
+    ```
+
+3. Follow the mParticle Android SDK [quick-start](https://github.com/mParticle/mparticle-android-sdk), then rebuild and launch your app, and verify that you see `"Leanplum detected"` in the output of `adb logcat`.
+4. Reference mParticle's integration docs below to enable the integration.
+
+### Documentation
+
+[Leanplum integration](http://docs.mparticle.com/?java#appboy)
 
 ### License
 
