@@ -4,7 +4,7 @@ This repository contains the [Leanplum](https://www.leanplum.com/) integration f
 
 ### Adding the integration
 
-1. The Leanplum Kit requires that you add Appboy's Maven server to your buildscript:
+1. The Leanplum Kit requires that you add Leanplum's Maven server to your buildscript:
 
     ```
     repositories {
@@ -26,7 +26,7 @@ This repository contains the [Leanplum](https://www.leanplum.com/) integration f
 
 ### Documentation
 
-[Leanplum integration](http://docs.mparticle.com/?java#appboy)
+[Leanplum integration](http://docs.mparticle.com/?java#leanplum)
 
 ### License
 
