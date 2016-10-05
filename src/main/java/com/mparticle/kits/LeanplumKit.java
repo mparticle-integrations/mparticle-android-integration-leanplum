@@ -48,7 +48,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Activi
             Leanplum.enableVerboseLoggingInDevelopmentMode();
             Leanplum.setAppIdForDevelopmentMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
         } else {
-            Leanplum.setAppIdForDevelopmentMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
+            Leanplum.setAppIdForProductionMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
         }
 
         Map<String, Object> attributes = getAllUserAttributes();
