@@ -15,6 +15,7 @@ import com.mparticle.MParticle;
 import com.mparticle.commerce.CommerceEvent;
 import com.mparticle.commerce.Product;
 import com.mparticle.internal.ConfigManager;
+import com.mparticle.internal.Logger;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -221,7 +222,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
                     logEvent(eventList.get(i));
                     messages.add(ReportingMessage.fromEvent(this, event));
                 } catch (Exception e) {
-                    ConfigManager.log(MParticle.LogLevel.WARNING, "Failed to call track to Leanplum kit: " + e.toString());
+                    Logger.warning("Failed to call track to Leanplum kit: " + e.toString());
                 }
             }
         }
