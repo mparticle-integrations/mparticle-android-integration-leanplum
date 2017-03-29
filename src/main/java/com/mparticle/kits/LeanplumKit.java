@@ -1,9 +1,8 @@
 package com.mparticle.kits;
 
-import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.text.TextUtils;
 
 import com.leanplum.Leanplum;
@@ -25,19 +24,11 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.ActivityListener, KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener {
-    private LeanplumActivityHelper helper;
+public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
     private final static String USER_ID_FIELD_KEY = "userIdField";
     private final static String USER_ID_CUSTOMER_ID_VALUE = "customerId";
-
-    private LeanplumActivityHelper getHelper(Activity activity) {
-        if (helper == null || activity != LeanplumActivityHelper.getCurrentActivity()) {
-            helper = new LeanplumActivityHelper(activity);
-        }
-        return helper;
-    }
 
     @Override
     protected List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
@@ -71,6 +62,8 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Activi
             Leanplum.start(context);
         }
 
+        LeanplumActivityHelper.enableLifecycleCallbacks((Application) context.getApplicationContext());
+
         List<ReportingMessage> messageList = new LinkedList<ReportingMessage>();
         messageList.add(
                 new ReportingMessage(this, ReportingMessage.MessageType.APP_STATE_TRANSITION, System.currentTimeMillis(), null)
@@ -86,53 +79,6 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Activi
     @Override
     public List<ReportingMessage> setOptOut(boolean optedOut) {
         //Leanplum doesn't have the notion of opt-out.
-        return null;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivityCreated(Activity activity, Bundle bundle) {
-        return null;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivityStarted(Activity activity) {
-        return null;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivityResumed(Activity activity) {
-        getHelper(activity).onResume();
-        List<ReportingMessage> messageList = new LinkedList<ReportingMessage>();
-        messageList.add(
-                new ReportingMessage(this, ReportingMessage.MessageType.APP_STATE_TRANSITION, System.currentTimeMillis(), null)
-        );
-        return messageList;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivityPaused(Activity activity) {
-        getHelper(activity).onPause();
-        List<ReportingMessage> messageList = new LinkedList<ReportingMessage>();
-        messageList.add(
-                new ReportingMessage(this, ReportingMessage.MessageType.APP_STATE_TRANSITION, System.currentTimeMillis(), null)
-        );
-        return messageList;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivityStopped(Activity activity) {
-        getHelper(activity).onStop();
-        return null;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-        return null;
-    }
-
-    @Override
-    public List<ReportingMessage> onActivityDestroyed(Activity activity) {
-        helper = null;
         return null;
     }
 
