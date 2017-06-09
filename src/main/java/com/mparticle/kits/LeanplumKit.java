@@ -55,7 +55,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             if (attributes.size() > 0) {
                 Leanplum.start(context, userId, attributes);
             } else {
-                Leanplum.start(context, attributes);
+                Leanplum.start(context, userId);
             }
         }else if (attributes.size() > 0) {
             Leanplum.start(context, attributes);
