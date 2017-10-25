@@ -17,7 +17,7 @@ This repository contains the [Leanplum](https://www.leanplum.com/) integration f
 
     ```groovy
     dependencies {
-        compile 'com.mparticle:android-leanplum-kit:4+'
+        compile 'com.mparticle:android-leanplum-kit:5+'
     }
     ```
 
