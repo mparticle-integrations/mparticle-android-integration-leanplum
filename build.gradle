@@ -17,8 +17,8 @@ android {
 }
 
 repositories {
-    maven { url 'http://www.leanplum.com/leanplum-sdks/' }
+    maven { url 'https://repo.leanplum.com' }
 }
 dependencies {
-    api 'com.leanplum:Leanplum:[2.2.0,2.3.0)'
+    api 'com.leanplum:Leanplum:3.0.1'
 }
