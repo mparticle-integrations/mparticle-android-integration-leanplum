@@ -14,6 +14,8 @@ import com.mparticle.MPEvent;
 import com.mparticle.MParticle;
 import com.mparticle.commerce.CommerceEvent;
 import com.mparticle.commerce.Product;
+import com.mparticle.identity.IdentityStateListener;
+import com.mparticle.identity.MParticleUser;
 import com.mparticle.internal.ConfigManager;
 import com.mparticle.internal.Logger;
 
@@ -25,14 +27,23 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener {
+public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, IdentityStateListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
-    private final static String USER_ID_FIELD_KEY = "userIdField";
-    private final static String USER_ID_CUSTOMER_ID_VALUE = "customerId";
+    final static String USER_ID_FIELD_KEY = "userIdField";
+    final static String USER_ID_CUSTOMER_ID_VALUE = "customerId";
+    final static String USER_ID_EMAIL_VALUE = "email";
+    final static String USER_ID_MPID_VALUE = "mpid";
+    /**
+     * Enable/disable Firebase. Defaults to false - Firebase will be used.
+     */
+    public static boolean disableFirebase = false;
 
     @Override
     protected List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
+        if (!disableFirebase) {
+            LeanplumPushService.enableFirebase();
+        }
         if (MParticle.isAndroidIdDisabled()) {
             Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ADVERTISING_ID);
         }
@@ -42,15 +53,9 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         } else {
             Leanplum.setAppIdForProductionMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
         }
-
+        MParticle.getInstance().Identity().addIdentityStateListener(this);
         Map<String, Object> attributes = getAllUserAttributes();
-        Map<MParticle.IdentityType, String> identities = getUserIdentities();
-        String userId;
-        if (USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
-            userId = identities.get(MParticle.IdentityType.CustomerId);
-        }else {
-            userId = identities.get(MParticle.IdentityType.Email);
-        }
+        String userId = generateLeanplumUserId(MParticle.getInstance().Identity().getCurrentUser(), settings);
         if (!TextUtils.isEmpty(userId)) {
             if (attributes.size() > 0) {
                 Leanplum.start(context, userId, attributes);
@@ -72,6 +77,20 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         return messageList;
     }
 
+    String generateLeanplumUserId(MParticleUser user, Map<String, String> settings) {
+        String userId = null;
+        if (USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
+            Map<MParticle.IdentityType, String> identities = getUserIdentities();
+            userId = identities.get(MParticle.IdentityType.CustomerId);
+        } else if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
+            Map<MParticle.IdentityType, String> identities = getUserIdentities();
+            userId = identities.get(MParticle.IdentityType.Email);
+        } else if (user != null && USER_ID_MPID_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
+            userId = Long.toString(user.getId());
+        }
+        return userId;
+    }
+
     @Override
     public String getName() {
         return "Leanplum";
@@ -90,16 +109,20 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
 
     @Override
     public void onPushMessageReceived(Context context, Intent intent) {
-        Intent service = new Intent(context, LeanplumPushListenerService.class);
-        service.setAction("com.google.android.c2dm.intent.RECEIVE");
-        service.putExtras(intent);
-        context.startService(service);
+        if (disableFirebase) {
+            Intent service = new Intent(context, LeanplumPushListenerService.class);
+            service.setAction("com.google.android.c2dm.intent.RECEIVE");
+            service.putExtras(intent);
+            context.startService(service);
+        }
     }
 
     @Override
     public boolean onPushRegistration(String instanceId, String senderId) {
-        LeanplumPushService.setGcmSenderId(senderId);
-        LeanplumPushService.setGcmRegistrationId(instanceId);
+        if (disableFirebase) {
+            LeanplumPushService.setGcmSenderId(senderId);
+            LeanplumPushService.setGcmRegistrationId(instanceId);
+        }
         return true;
     }
 
@@ -139,8 +162,8 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         if (identityType.equals(MParticle.IdentityType.CustomerId) &&
                 USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
             Leanplum.setUserId(id);
-        }else if (identityType.equals(MParticle.IdentityType.Email) &&
-                !USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
+        } else if (identityType.equals(MParticle.IdentityType.Email) &&
+                USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
             Leanplum.setUserId(id);
         }
     }
@@ -150,8 +173,8 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         if (identityType.equals(MParticle.IdentityType.CustomerId) &&
                 USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
             Leanplum.setUserId(null);
-        }else if (identityType.equals(MParticle.IdentityType.Email) &&
-                !USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
+        } else if (identityType.equals(MParticle.IdentityType.Email) &&
+                USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
             Leanplum.setUserId(null);
         }
     }
@@ -227,5 +250,11 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             }
         }
         return messages;
+    }
+
+    @Override
+    public void onUserIdentified(MParticleUser mParticleUser) {
+        String userId = generateLeanplumUserId(mParticleUser, getSettings());
+        Leanplum.setUserId(userId);
     }
 }
