@@ -56,6 +56,11 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         MParticle.getInstance().Identity().addIdentityStateListener(this);
         Map<String, Object> attributes = getAllUserAttributes();
         String userId = generateLeanplumUserId(MParticle.getInstance().Identity().getCurrentUser(), settings);
+        if (getUserIdentities().containsKey(MParticle.IdentityType.Email)) {
+            setUserAttribute("email", getUserIdentities().get(MParticle.IdentityType.Email));
+        } else {
+            setUserAttribute("email", null);
+        }
         if (!TextUtils.isEmpty(userId)) {
             if (attributes.size() > 0) {
                 Leanplum.start(context, userId, attributes);
@@ -161,10 +166,12 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     public void setUserIdentity(MParticle.IdentityType identityType, String id) {
         if (identityType.equals(MParticle.IdentityType.CustomerId) &&
                 USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-            Leanplum.setUserId(id);
-        } else if (identityType.equals(MParticle.IdentityType.Email) &&
-                USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-            Leanplum.setUserId(id);
+            setUserId(id);
+        } else if (identityType.equals(MParticle.IdentityType.Email)) {
+            setUserAttribute("email", id);
+            if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
+                setUserId(id);
+            }
         }
     }
 
@@ -172,10 +179,12 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     public void removeUserIdentity(MParticle.IdentityType identityType) {
         if (identityType.equals(MParticle.IdentityType.CustomerId) &&
                 USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-            Leanplum.setUserId(null);
-        } else if (identityType.equals(MParticle.IdentityType.Email) &&
-                USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-            Leanplum.setUserId(null);
+            setUserId(null);
+        } else if (identityType.equals(MParticle.IdentityType.Email)){
+                removeUserAttribute("email");
+                if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
+                    setUserId(null);
+                }
         }
     }
 
@@ -255,6 +264,11 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     @Override
     public void onUserIdentified(MParticleUser mParticleUser) {
         String userId = generateLeanplumUserId(mParticleUser, getSettings());
+        setUserId(userId);
+    }
+
+    private void setUserId(String userId) {
         Leanplum.setUserId(userId);
+        Leanplum.forceContentUpdate();
     }
 }

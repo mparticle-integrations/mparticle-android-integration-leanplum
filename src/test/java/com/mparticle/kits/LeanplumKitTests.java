@@ -3,6 +3,7 @@ package com.mparticle.kits;
 
 import android.content.Context;
 
+import com.mparticle.MParticle;
 import com.mparticle.identity.MParticleUser;
 
 import junit.framework.Assert;
@@ -13,6 +14,8 @@ import org.mockito.Mockito;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -73,6 +76,31 @@ public class LeanplumKitTests {
         Mockito.when(user.getId()).thenReturn(5L);
         id = kit.generateLeanplumUserId(null, settings);
         Assert.assertNull(id);
+    }
 
+    @Test
+    public void testSetEmailIdentityType() throws Exception {
+        for (MParticle.IdentityType identityType: MParticle.IdentityType.values()) {
+            final boolean[] emailSet = {false, false};
+            LeanplumKit kit = new LeanplumKit() {
+                @Override
+                public void setUserAttribute(String key, String value) {
+                    if (key.equals("email")) {
+                        emailSet[0] = true;
+                        assertEquals(value, "test");
+                    }
+                    emailSet[1] = true;
+                }
+            };
+            kit.setConfiguration(new KitConfiguration());
+            kit.setUserIdentity(identityType, "test");
+            if (identityType == MParticle.IdentityType.Email) {
+                assertTrue(emailSet[0]);
+                assertTrue(emailSet[1]);
+            } else {
+                assertFalse(emailSet[0]);
+                assertFalse(emailSet[1]);
+            }
+        }
     }
 }
