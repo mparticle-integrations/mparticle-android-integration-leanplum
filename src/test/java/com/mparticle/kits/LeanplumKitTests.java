@@ -2,6 +2,7 @@ package com.mparticle.kits;
 
 
 import android.content.Context;
+import android.util.SparseBooleanArray;
 
 import com.mparticle.MParticle;
 import com.mparticle.identity.MParticleUser;
@@ -9,6 +10,7 @@ import com.mparticle.identity.MParticleUser;
 import junit.framework.Assert;
 
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
@@ -65,42 +67,62 @@ public class LeanplumKitTests {
 
     @Test
     public void testGenerateMpidUserId() throws Exception {
-        LeanplumKit kit = new LeanplumKit();
         Map<String, String> settings = new HashMap<>();
         settings.put(LeanplumKit.USER_ID_FIELD_KEY, LeanplumKit.USER_ID_MPID_VALUE);
+
+        Map<MParticle.IdentityType, String> userIdentities = new HashMap<>();
+        userIdentities.put(MParticle.IdentityType.Email, "foo email");
+        userIdentities.put(MParticle.IdentityType.CustomerId, "foo customer id");
+
         MParticleUser user = Mockito.mock(MParticleUser.class);
         Mockito.when(user.getId()).thenReturn(5L);
-        String id = kit.generateLeanplumUserId(user, settings);
+
+        LeanplumKit kit = new LeanplumKit();
+        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        String id = kit.generateLeanplumUserId(user, settings, userIdentities);
         Assert.assertEquals("5", id);
 
-        Mockito.when(user.getId()).thenReturn(5L);
-        id = kit.generateLeanplumUserId(null, settings);
+        id = kit.generateLeanplumUserId(null, settings, userIdentities);
         Assert.assertNull(id);
     }
 
     @Test
-    public void testSetEmailIdentityType() throws Exception {
-        for (MParticle.IdentityType identityType: MParticle.IdentityType.values()) {
-            final boolean[] emailSet = {false, false};
-            LeanplumKit kit = new LeanplumKit() {
-                @Override
-                public void setUserAttribute(String key, String value) {
-                    if (key.equals("email")) {
-                        emailSet[0] = true;
-                        assertEquals(value, "test");
-                    }
-                    emailSet[1] = true;
-                }
-            };
-            kit.setConfiguration(new KitConfiguration());
-            kit.setUserIdentity(identityType, "test");
-            if (identityType == MParticle.IdentityType.Email) {
-                assertTrue(emailSet[0]);
-                assertTrue(emailSet[1]);
-            } else {
-                assertFalse(emailSet[0]);
-                assertFalse(emailSet[1]);
-            }
-        }
+    public void testGenerateEmailUserId() throws Exception {
+        Map<String, String> settings = new HashMap<>();
+        settings.put(LeanplumKit.USER_ID_FIELD_KEY, LeanplumKit.USER_ID_EMAIL_VALUE);
+
+        Map<MParticle.IdentityType, String> userIdentities = new HashMap<>();
+        userIdentities.put(MParticle.IdentityType.Email, "foo email");
+        userIdentities.put(MParticle.IdentityType.CustomerId, "foo customer id");
+
+        MParticleUser user = Mockito.mock(MParticleUser.class);
+        Mockito.when(user.getId()).thenReturn(5L);
+        LeanplumKit kit = new LeanplumKit();
+        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        String id = kit.generateLeanplumUserId(user, settings, userIdentities);
+        Assert.assertEquals("foo email", id);
+        userIdentities.remove(MParticle.IdentityType.Email);
+        id = kit.generateLeanplumUserId(user, settings, userIdentities);
+        Assert.assertNull(id);
+    }
+
+    @Test
+    public void testGenerateCustomerIdlUserId() throws Exception {
+        Map<String, String> settings = new HashMap<>();
+        settings.put(LeanplumKit.USER_ID_FIELD_KEY, LeanplumKit.USER_ID_CUSTOMER_ID_VALUE);
+
+        Map<MParticle.IdentityType, String> userIdentities = new HashMap<>();
+        userIdentities.put(MParticle.IdentityType.Email, "foo email");
+        userIdentities.put(MParticle.IdentityType.CustomerId, "foo customer id");
+
+        MParticleUser user = Mockito.mock(MParticleUser.class);
+        Mockito.when(user.getId()).thenReturn(5L);
+        LeanplumKit kit = new LeanplumKit();
+        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        String id = kit.generateLeanplumUserId(user, settings, userIdentities);
+        Assert.assertEquals("foo customer id", id);
+        userIdentities.remove(MParticle.IdentityType.CustomerId);
+        id = kit.generateLeanplumUserId(user, settings, userIdentities);
+        Assert.assertNull(id);
     }
 }

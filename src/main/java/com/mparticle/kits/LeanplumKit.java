@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.leanplum.Leanplum;
 import com.leanplum.LeanplumActivityHelper;
@@ -16,12 +17,12 @@ import com.mparticle.commerce.CommerceEvent;
 import com.mparticle.commerce.Product;
 import com.mparticle.identity.IdentityStateListener;
 import com.mparticle.identity.MParticleUser;
-import com.mparticle.internal.ConfigManager;
 import com.mparticle.internal.Logger;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     final static String USER_ID_CUSTOMER_ID_VALUE = "customerId";
     final static String USER_ID_EMAIL_VALUE = "email";
     final static String USER_ID_MPID_VALUE = "mpid";
+    final static String LEANPLUM_EMAIL_USER_ATTRIBUTE = "email";
     /**
      * Enable/disable Firebase. Defaults to false - Firebase will be used.
      */
@@ -54,22 +56,27 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             Leanplum.setAppIdForProductionMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
         }
         MParticle.getInstance().Identity().addIdentityStateListener(this);
-        Map<String, Object> attributes = getAllUserAttributes();
-        String userId = generateLeanplumUserId(MParticle.getInstance().Identity().getCurrentUser(), settings);
-        if (getUserIdentities().containsKey(MParticle.IdentityType.Email)) {
-            setUserAttribute("email", getUserIdentities().get(MParticle.IdentityType.Email));
-        } else {
-            setUserAttribute("email", null);
+        Map<MParticle.IdentityType, String> userIdentities = getUserIdentities();
+        Map<String, Object> userAttributes = getAllUserAttributes();
+        String userId = generateLeanplumUserId(MParticle.getInstance().Identity().getCurrentUser(), settings, userIdentities);
+
+        if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE)) {
+            if (userIdentities.containsKey(MParticle.IdentityType.Email)) {
+                userAttributes.put(LEANPLUM_EMAIL_USER_ATTRIBUTE, userIdentities.get(MParticle.IdentityType.Email));
+            } else {
+                userAttributes.put(LEANPLUM_EMAIL_USER_ATTRIBUTE, null);
+            }
         }
+
         if (!TextUtils.isEmpty(userId)) {
-            if (attributes.size() > 0) {
-                Leanplum.start(context, userId, attributes);
+            if (userAttributes.size() > 0) {
+                Leanplum.start(context, userId, userAttributes);
             } else {
                 Leanplum.start(context, userId);
             }
-        }else if (attributes.size() > 0) {
-            Leanplum.start(context, attributes);
-        }else {
+        } else if (userAttributes.size() > 0) {
+            Leanplum.start(context, userAttributes);
+        } else {
             Leanplum.start(context);
         }
 
@@ -82,14 +89,39 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         return messageList;
     }
 
-    String generateLeanplumUserId(MParticleUser user, Map<String, String> settings) {
+    @Override
+    public void onUserIdentified(MParticleUser mParticleUser) {
+        Map<MParticle.IdentityType, String> userIdentities = mParticleUser.getUserIdentities();
+        String userId = generateLeanplumUserId(mParticleUser, getSettings(), userIdentities);
+        //first set userId to effectively switch users
+        if (!KitUtils.isEmpty(userId)) {
+            Leanplum.setUserId(userId);
+        }
+        //then set the attributes of the new user
+        Map<String, Object> userAttributes = null;
+        try {
+            userAttributes = (Map<String, Object>) KitConfiguration.filterAttributes(this.getConfiguration().getUserAttributeFilters(), mParticleUser.getUserAttributes());
+        }catch (Exception e) {
+            userAttributes = new HashMap<String, Object>();
+        }
+        if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE) && getConfiguration().shouldSetIdentity(MParticle.IdentityType.Email)) {
+            if (userIdentities.containsKey(MParticle.IdentityType.Email)) {
+                userAttributes.put(LEANPLUM_EMAIL_USER_ATTRIBUTE, userIdentities.get(MParticle.IdentityType.Email));
+            } else {
+                userAttributes.put(LEANPLUM_EMAIL_USER_ATTRIBUTE, null);
+            }
+        }
+        Leanplum.setUserAttributes(userAttributes);
+        //per Leanplum - it's a good idea to make sure the SDK refreshes itself
+        Leanplum.forceContentUpdate();
+    }
+
+     String generateLeanplumUserId(MParticleUser user, Map<String, String> settings, Map<MParticle.IdentityType, String> userIdentities) {
         String userId = null;
-        if (USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
-            Map<MParticle.IdentityType, String> identities = getUserIdentities();
-            userId = identities.get(MParticle.IdentityType.CustomerId);
-        } else if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
-            Map<MParticle.IdentityType, String> identities = getUserIdentities();
-            userId = identities.get(MParticle.IdentityType.Email);
+        if (USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY)) && getConfiguration().shouldSetIdentity(MParticle.IdentityType.CustomerId)) {
+            userId = userIdentities.get(MParticle.IdentityType.CustomerId);
+        } else if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY)) && getConfiguration().shouldSetIdentity(MParticle.IdentityType.Email)) {
+            userId = userIdentities.get(MParticle.IdentityType.Email);
         } else if (user != null && USER_ID_MPID_VALUE.equalsIgnoreCase(settings.get(USER_ID_FIELD_KEY))) {
             userId = Long.toString(user.getId());
         }
@@ -131,6 +163,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         return true;
     }
 
+
     @Override
     public void setUserAttribute(String key, String value) {
         Map<String, Object> attributes = new HashMap<String, Object>(1);
@@ -164,35 +197,18 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
 
     @Override
     public void setUserIdentity(MParticle.IdentityType identityType, String id) {
-        if (identityType.equals(MParticle.IdentityType.CustomerId) &&
-                USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-            setUserId(id);
-        } else if (identityType.equals(MParticle.IdentityType.Email)) {
-            setUserAttribute("email", id);
-            if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-                setUserId(id);
-            }
-        }
+        //handled by IdentityStateListener
     }
 
     @Override
     public void removeUserIdentity(MParticle.IdentityType identityType) {
-        if (identityType.equals(MParticle.IdentityType.CustomerId) &&
-                USER_ID_CUSTOMER_ID_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-            setUserId(null);
-        } else if (identityType.equals(MParticle.IdentityType.Email)){
-                removeUserAttribute("email");
-                if (USER_ID_EMAIL_VALUE.equalsIgnoreCase(getSettings().get(USER_ID_FIELD_KEY))) {
-                    setUserId(null);
-                }
-        }
+        //handled by IdentityStateListener
     }
 
     @Override
     public List<ReportingMessage> logout() {
         return null;
     }
-
     @Override
     public List<ReportingMessage> leaveBreadcrumb(String s) {
         return null;
@@ -231,7 +247,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     private void logTransaction(CommerceEvent event, Product product) {
         Map<String, String> eventAttributes = new HashMap<String, String>();
         CommerceEventUtils.extractActionAttributes(event, eventAttributes);
-        Leanplum.track(Leanplum.PURCHASE_EVENT_NAME, product.getTotalAmount(),product.getName(), eventAttributes);
+        Leanplum.track(Leanplum.PURCHASE_EVENT_NAME, product.getTotalAmount(), product.getName(), eventAttributes);
     }
 
     @Override
@@ -259,16 +275,5 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             }
         }
         return messages;
-    }
-
-    @Override
-    public void onUserIdentified(MParticleUser mParticleUser) {
-        String userId = generateLeanplumUserId(mParticleUser, getSettings());
-        setUserId(userId);
-    }
-
-    private void setUserId(String userId) {
-        Leanplum.setUserId(userId);
-        Leanplum.forceContentUpdate();
     }
 }
