@@ -6,6 +6,8 @@ import android.util.SparseBooleanArray;
 
 import com.mparticle.MParticle;
 import com.mparticle.identity.MParticleUser;
+import com.mparticle.kits_core.KitConfiguration;
+import com.mparticle.kits_core.KitIntegration;
 
 import junit.framework.Assert;
 
@@ -98,7 +100,9 @@ public class LeanplumKitTests {
         MParticleUser user = Mockito.mock(MParticleUser.class);
         Mockito.when(user.getId()).thenReturn(5L);
         LeanplumKit kit = new LeanplumKit();
-        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        KitConfiguration kitConfiguration = Mockito.mock(KitConfiguration.class);
+        kit.setConfiguration(kitConfiguration);
+        Mockito.when(kitConfiguration.shouldSetIdentity(Mockito.any(MParticle.IdentityType.class))).thenReturn(true);
         String id = kit.generateLeanplumUserId(user, settings, userIdentities);
         Assert.assertEquals("foo email", id);
         userIdentities.remove(MParticle.IdentityType.Email);
@@ -118,7 +122,9 @@ public class LeanplumKitTests {
         MParticleUser user = Mockito.mock(MParticleUser.class);
         Mockito.when(user.getId()).thenReturn(5L);
         LeanplumKit kit = new LeanplumKit();
-        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        KitConfiguration kitConfiguration = Mockito.mock(KitConfiguration.class);
+        kit.setConfiguration(kitConfiguration);
+        Mockito.when(kitConfiguration.shouldSetIdentity(Mockito.any(MParticle.IdentityType.class))).thenReturn(true);
         String id = kit.generateLeanplumUserId(user, settings, userIdentities);
         Assert.assertEquals("foo customer id", id);
         userIdentities.remove(MParticle.IdentityType.CustomerId);

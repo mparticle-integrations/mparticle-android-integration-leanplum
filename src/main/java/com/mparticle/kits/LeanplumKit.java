@@ -18,6 +18,8 @@ import com.mparticle.commerce.Product;
 import com.mparticle.identity.IdentityStateListener;
 import com.mparticle.identity.MParticleUser;
 import com.mparticle.internal.Logger;
+import com.mparticle.kits_core.KitIntegration;
+import com.mparticle.kits_core.ReportingMessage;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -28,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, IdentityStateListener {
+public class LeanplumKit extends AbstractKitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, IdentityStateListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
     final static String USER_ID_FIELD_KEY = "userIdField";
@@ -42,7 +44,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     public static boolean disableFirebase = false;
 
     @Override
-    protected List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
+    public List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
         if (!disableFirebase) {
             LeanplumPushService.enableFirebase();
         }
@@ -84,7 +86,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
 
         List<ReportingMessage> messageList = new LinkedList<ReportingMessage>();
         messageList.add(
-                new ReportingMessage(this, ReportingMessage.MessageType.APP_STATE_TRANSITION, System.currentTimeMillis(), null)
+                new ReportingMessageImpl(this, ReportingMessageImpl.MessageType.APP_STATE_TRANSITION, System.currentTimeMillis(), null)
         );
         return messageList;
     }
@@ -100,7 +102,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         //then set the attributes of the new user
         Map<String, Object> userAttributes = null;
         try {
-            userAttributes = (Map<String, Object>) KitConfiguration.filterAttributes(this.getConfiguration().getUserAttributeFilters(), mParticleUser.getUserAttributes());
+            userAttributes = (Map<String, Object>) KitConfigurationImpl.filterAttributes(this.getConfiguration().getUserAttributeFilters(), mParticleUser.getUserAttributes());
         }catch (Exception e) {
             userAttributes = new HashMap<String, Object>();
         }
@@ -227,20 +229,20 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     @Override
     public List<ReportingMessage> logEvent(MPEvent mpEvent) {
         Leanplum.track(mpEvent.getEventName(), mpEvent.getInfo());
-        return Arrays.asList(ReportingMessage.fromEvent(this, mpEvent));
+        return Arrays.asList(ReportingMessageImpl.fromEvent(this, mpEvent));
     }
 
     @Override
     public List<ReportingMessage> logScreen(String screenName, Map<String, String> attributes) {
         Leanplum.advanceTo(screenName, attributes);
-        return Arrays.asList(new ReportingMessage(this, ReportingMessage.MessageType.SCREEN_VIEW, System.currentTimeMillis(), attributes));
+        return Arrays.asList((ReportingMessage)new ReportingMessageImpl(this, ReportingMessageImpl.MessageType.SCREEN_VIEW, System.currentTimeMillis(), attributes));
     }
 
     @Override
     public List<ReportingMessage> logLtvIncrease(BigDecimal valueIncreased, BigDecimal total, String eventName, Map<String, String> attributes) {
         Leanplum.track(eventName, valueIncreased.doubleValue(), attributes);
         List<ReportingMessage> messageList = new LinkedList<ReportingMessage>();
-        messageList.add(ReportingMessage.fromEvent(this, new MPEvent.Builder(eventName, MParticle.EventType.Transaction).info(attributes).build()));
+        messageList.add(ReportingMessageImpl.fromEvent(this, new MPEvent.Builder(eventName, MParticle.EventType.Transaction).info(attributes).build()));
         return messageList;
     }
 
@@ -260,7 +262,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             for (Product product : productList) {
                 logTransaction(event, product);
             }
-            messages.add(ReportingMessage.fromEvent(this, event));
+            messages.add(ReportingMessageImpl.fromEvent(this, event));
             return messages;
         }
         List<MPEvent> eventList = CommerceEventUtils.expand(event);
@@ -268,7 +270,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             for (int i = 0; i < eventList.size(); i++) {
                 try {
                     logEvent(eventList.get(i));
-                    messages.add(ReportingMessage.fromEvent(this, event));
+                    messages.add(ReportingMessageImpl.fromEvent(this, event));
                 } catch (Exception e) {
                     Logger.warning("Failed to call track to Leanplum kit: " + e.toString());
                 }
