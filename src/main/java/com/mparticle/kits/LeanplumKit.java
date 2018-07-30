@@ -18,8 +18,8 @@ import com.mparticle.commerce.Product;
 import com.mparticle.identity.IdentityStateListener;
 import com.mparticle.identity.MParticleUser;
 import com.mparticle.internal.Logger;
-import com.mparticle.kits_core.KitIntegration;
-import com.mparticle.kits_core.ReportingMessage;
+import com.mparticle.kits.core.KitIntegration;
+import com.mparticle.kits.core.ReportingMessage;
 
 import java.math.BigDecimal;
 import java.util.Arrays;

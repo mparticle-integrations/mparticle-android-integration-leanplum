@@ -6,8 +6,8 @@ import android.util.SparseBooleanArray;
 
 import com.mparticle.MParticle;
 import com.mparticle.identity.MParticleUser;
-import com.mparticle.kits_core.KitConfiguration;
-import com.mparticle.kits_core.KitIntegration;
+import com.mparticle.kits.core.KitConfiguration;
+import com.mparticle.kits.core.KitIntegration;
 
 import junit.framework.Assert;
 
