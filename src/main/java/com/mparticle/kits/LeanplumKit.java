@@ -4,12 +4,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.leanplum.Leanplum;
 import com.leanplum.LeanplumActivityHelper;
 import com.leanplum.LeanplumDeviceIdMode;
-import com.leanplum.LeanplumPushListenerService;
 import com.leanplum.LeanplumPushService;
 import com.mparticle.MPEvent;
 import com.mparticle.MParticle;
@@ -22,7 +20,6 @@ import com.mparticle.internal.Logger;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -36,16 +33,17 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     final static String USER_ID_EMAIL_VALUE = "email";
     final static String USER_ID_MPID_VALUE = "mpid";
     final static String LEANPLUM_EMAIL_USER_ATTRIBUTE = "email";
+
+    private final static String LEGACY_PUSH_LISTENER_PATH = "com.leanplum.LeanplumPushListenerService";
+    private Class legacyPushListener = null;
     /**
      * Enable/disable Firebase. Defaults to false - Firebase will be used.
      */
-    public static boolean disableFirebase = false;
+    private boolean disableFirebase = false;
 
     @Override
     protected List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
-        if (!disableFirebase) {
-            LeanplumPushService.enableFirebase();
-        }
+        disableFirebase = isFirebaseDisabled();
         if (MParticle.isAndroidIdDisabled()) {
             Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ADVERTISING_ID);
         }
@@ -146,8 +144,8 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
 
     @Override
     public void onPushMessageReceived(Context context, Intent intent) {
-        if (disableFirebase) {
-            Intent service = new Intent(context, LeanplumPushListenerService.class);
+        if (disableFirebase && legacyPushListener != null) {
+            Intent service = new Intent(context, legacyPushListener);
             service.setAction("com.google.android.c2dm.intent.RECEIVE");
             service.putExtras(intent);
             context.startService(service);
@@ -275,5 +273,14 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             }
         }
         return messages;
+    }
+
+    private boolean isFirebaseDisabled() {
+        try {
+            legacyPushListener = Class.forName(LEGACY_PUSH_LISTENER_PATH);
+            return true;
+        } catch (ClassNotFoundException ignore) {
+        }
+        return false;
     }
 }
