@@ -1,23 +1,2 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.mparticle.kits.leanplum" >
-    <application>
-    <service
-        android:name="com.leanplum.LeanplumPushListenerService"
-        android:exported="false" >
-        <intent-filter>
-            <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-        </intent-filter>
-    </service>
-
-    <service android:name="com.leanplum.LeanplumLocalPushListenerService" />
-
-    <service android:name="com.leanplum.LeanplumPushRegistrationService" />
-
-    <service
-        android:name="com.leanplum.LeanplumPushInstanceIDService"
-        android:exported="false">
-        <intent-filter>
-            <action android:name="com.google.android.gms.iid.InstanceID" />
-        </intent-filter>
-    </service>
-    </application>
 </manifest>
