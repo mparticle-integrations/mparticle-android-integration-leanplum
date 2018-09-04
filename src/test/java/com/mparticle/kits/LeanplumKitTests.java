@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 
 public class LeanplumKitTests {
 
@@ -98,7 +99,9 @@ public class LeanplumKitTests {
         MParticleUser user = Mockito.mock(MParticleUser.class);
         Mockito.when(user.getId()).thenReturn(5L);
         LeanplumKit kit = new LeanplumKit();
-        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        KitConfiguration mockConfiguraiton = Mockito.mock(KitConfiguration.class);
+        Mockito.when(mockConfiguraiton.shouldSetIdentity(any(MParticle.IdentityType.class))).thenReturn(true);
+        kit.setConfiguration(mockConfiguraiton);
         String id = kit.generateLeanplumUserId(user, settings, userIdentities);
         Assert.assertEquals("foo email", id);
         userIdentities.remove(MParticle.IdentityType.Email);
@@ -118,7 +121,9 @@ public class LeanplumKitTests {
         MParticleUser user = Mockito.mock(MParticleUser.class);
         Mockito.when(user.getId()).thenReturn(5L);
         LeanplumKit kit = new LeanplumKit();
-        kit.setConfiguration(Mockito.mock(KitConfiguration.class));
+        KitConfiguration mockConfiguraiton = Mockito.mock(KitConfiguration.class);
+        Mockito.when(mockConfiguraiton.shouldSetIdentity(any(MParticle.IdentityType.class))).thenReturn(true);
+        kit.setConfiguration(mockConfiguraiton);
         String id = kit.generateLeanplumUserId(user, settings, userIdentities);
         Assert.assertEquals("foo customer id", id);
         userIdentities.remove(MParticle.IdentityType.CustomerId);
