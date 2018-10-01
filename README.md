@@ -32,15 +32,15 @@ Leanplum is deprecating GCM support, but it is still available. While we recomme
 
     ```groovy
     dependencies {
-            implementation ('com.mparticle:android-leanplum-kit:5.5.0') {
-                    exclude module: 'leanplum-fcm'
-            }
-            implementation 'com.leanplum:leanplum-gcm:4.0.0'
+        implementation ('com.mparticle:android-leanplum-kit:REPLACE-ME') {
+                exclude module: 'leanplum-fcm'
         }
+        implementation 'com.leanplum:leanplum-gcm:4.1.1'
+    }
     ```
 ### Documentation
 
-[Leanplum integration](http://docs.mparticle.com/?java#leanplum)
+[Leanplum integration](https://docs.mparticle.com/integrations/leanplum/event/)
 
 ### License
 
