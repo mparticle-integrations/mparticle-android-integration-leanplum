@@ -33,7 +33,10 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     final static String USER_ID_EMAIL_VALUE = "email";
     final static String USER_ID_MPID_VALUE = "mpid";
     final static String LEANPLUM_EMAIL_USER_ATTRIBUTE = "email";
-
+    final static String DEVICE_ID_TYPE = "androidDeviceId";
+    final static String DEVICE_ID_TYPE_GOOGLE_AD_ID = "gaid";
+    final static String DEVICE_ID_TYPE_ANDROID_ID = "androidId";
+    final static String DEVICE_ID_TYPE_DAS = "das";
     private final static String LEGACY_PUSH_LISTENER_PATH = "com.leanplum.LeanplumPushListenerService";
     private Class legacyPushListener = null;
     /**
@@ -44,9 +47,8 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     @Override
     protected List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
         disableFirebase = isFirebaseDisabled();
-        if (MParticle.isAndroidIdDisabled()) {
-            Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ADVERTISING_ID);
-        }
+        String deviceIdType = settings.get(DEVICE_ID_TYPE);
+        setDeviceIdType(deviceIdType);
         if (MParticle.getInstance().getEnvironment().equals(MParticle.Environment.Development)) {
             Leanplum.enableVerboseLoggingInDevelopmentMode();
             Leanplum.setAppIdForDevelopmentMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
@@ -273,6 +275,16 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
             }
         }
         return messages;
+    }
+
+    void setDeviceIdType(String deviceIdType) {
+        if (DEVICE_ID_TYPE_ANDROID_ID.equals(deviceIdType) && !MParticle.isAndroidIdDisabled()) {
+            Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ANDROID_ID);
+        } else if (DEVICE_ID_TYPE_GOOGLE_AD_ID.equals(deviceIdType)) {
+            Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ADVERTISING_ID);
+        } else if (DEVICE_ID_TYPE_DAS.equals(deviceIdType)) {
+            Leanplum.setDeviceId(MParticle.getInstance().Identity().getDeviceApplicationStamp());
+        }
     }
 
     private boolean isFirebaseDisabled() {

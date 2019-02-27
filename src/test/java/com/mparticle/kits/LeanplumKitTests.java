@@ -2,27 +2,33 @@ package com.mparticle.kits;
 
 
 import android.content.Context;
-import android.util.SparseBooleanArray;
 
+import com.leanplum.Leanplum;
+import com.leanplum.LeanplumDeviceIdMode;
 import com.mparticle.MParticle;
+import com.mparticle.identity.IdentityApi;
 import com.mparticle.identity.MParticleUser;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
-import org.mockito.Mock;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 
+@RunWith(PowerMockRunner.class)
 public class LeanplumKitTests {
 
     private KitIntegration getKit() {
@@ -129,5 +135,54 @@ public class LeanplumKitTests {
         userIdentities.remove(MParticle.IdentityType.CustomerId);
         id = kit.generateLeanplumUserId(user, settings, userIdentities);
         Assert.assertNull(id);
+    }
+
+    @Test
+    @PrepareForTest({MParticle.class})
+    public void testDeviceIdType() {
+        PowerMockito.mockStatic(MParticle.class);
+
+        String mockDas = "mockDasValue";
+        PowerMockito.when(MParticle.getInstance()).thenReturn(Mockito.mock(MParticle.class));
+        Mockito.when(MParticle.getInstance().Identity()).thenReturn(Mockito.mock(IdentityApi.class));
+        Mockito.when(MParticle.getInstance().Identity().getDeviceApplicationStamp()).thenReturn(mockDas);
+        PowerMockito.when(MParticle.isAndroidIdDisabled()).thenReturn(false);
+
+        LeanplumKit leanplumKit = new LeanplumKit();
+
+        leanplumKit.setDeviceIdType(LeanplumKit.DEVICE_ID_TYPE_ANDROID_ID);
+        assertEquals(LeanplumDeviceIdMode.ANDROID_ID, Leanplum.getMode());
+        assertNull(Leanplum.getDeviceId());
+
+        Leanplum.clear();
+
+        leanplumKit.setDeviceIdType(LeanplumKit.DEVICE_ID_TYPE_GOOGLE_AD_ID);
+        assertEquals(LeanplumDeviceIdMode.ADVERTISING_ID, Leanplum.getMode());
+        assertNull(Leanplum.getDeviceId());
+
+        Leanplum.clear();
+
+        leanplumKit.setDeviceIdType(LeanplumKit.DEVICE_ID_TYPE_DAS);
+        assertEquals(mockDas, Leanplum.getDeviceId());
+        assertNull(Leanplum.getMode());
+
+        Leanplum.clear();
+
+        leanplumKit.setDeviceIdType("adrbsdtb");
+        assertNull(Leanplum.getDeviceId());
+        assertNull(Leanplum.getMode());
+
+        leanplumKit.setDeviceIdType(null);
+        assertNull(Leanplum.getDeviceId());
+        assertNull(Leanplum.getMode());
+
+        Leanplum.clear();
+
+        PowerMockito.when(MParticle.isAndroidIdDisabled()).thenReturn(true);
+        leanplumKit.setDeviceIdType(LeanplumKit.DEVICE_ID_TYPE_ANDROID_ID);
+        assertNull(Leanplum.getMode());
+        assertNull(Leanplum.getDeviceId());
+
+
     }
 }
