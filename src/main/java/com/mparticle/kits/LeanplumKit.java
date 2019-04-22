@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, IdentityStateListener {
+public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
     final static String USER_ID_FIELD_KEY = "userIdField";
@@ -55,7 +55,6 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         } else {
             Leanplum.setAppIdForProductionMode(settings.get(APP_ID_KEY), settings.get(CLIENT_KEY_KEY));
         }
-        MParticle.getInstance().Identity().addIdentityStateListener(this);
         Map<MParticle.IdentityType, String> userIdentities = getUserIdentities();
         Map<String, Object> userAttributes = getAllUserAttributes();
         String userId = generateLeanplumUserId(MParticle.getInstance().Identity().getCurrentUser(), settings, userIdentities);
@@ -90,6 +89,26 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     }
 
     @Override
+    public void onIdentifyCompleted(MParticleUser mParticleUser, FilteredIdentityApiRequest filteredIdentityApiRequest) {
+        //do nothing
+    }
+
+    @Override
+    public void onLoginCompleted(MParticleUser mParticleUser, FilteredIdentityApiRequest filteredIdentityApiRequest) {
+        //do nothing
+    }
+
+    @Override
+    public void onLogoutCompleted(MParticleUser mParticleUser, FilteredIdentityApiRequest filteredIdentityApiRequest) {
+        //do nothing
+    }
+
+    @Override
+    public void onModifyCompleted(MParticleUser mParticleUser, FilteredIdentityApiRequest filteredIdentityApiRequest) {
+        //do nothing
+    }
+
+    @Override
     public void onUserIdentified(MParticleUser mParticleUser) {
         Map<MParticle.IdentityType, String> userIdentities = mParticleUser.getUserIdentities();
         String userId = generateLeanplumUserId(mParticleUser, getSettings(), userIdentities);
@@ -100,7 +119,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         //then set the attributes of the new user
         Map<String, Object> userAttributes = null;
         try {
-            userAttributes = (Map<String, Object>) KitConfiguration.filterAttributes(this.getConfiguration().getUserAttributeFilters(), mParticleUser.getUserAttributes());
+            userAttributes = mParticleUser.getUserAttributes();
         }catch (Exception e) {
             userAttributes = new HashMap<String, Object>();
         }
