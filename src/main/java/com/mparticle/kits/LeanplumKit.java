@@ -8,12 +8,10 @@ import android.text.TextUtils;
 import com.leanplum.Leanplum;
 import com.leanplum.LeanplumActivityHelper;
 import com.leanplum.LeanplumDeviceIdMode;
-import com.leanplum.LeanplumPushService;
 import com.mparticle.MPEvent;
 import com.mparticle.MParticle;
 import com.mparticle.commerce.CommerceEvent;
 import com.mparticle.commerce.Product;
-import com.mparticle.identity.IdentityStateListener;
 import com.mparticle.identity.MParticleUser;
 import com.mparticle.internal.Logger;
 
@@ -25,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.PushListener, KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener {
+public class LeanplumKit extends KitIntegration implements KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
     final static String USER_ID_FIELD_KEY = "userIdField";
@@ -37,16 +35,9 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
     final static String DEVICE_ID_TYPE_GOOGLE_AD_ID = "gaid";
     final static String DEVICE_ID_TYPE_ANDROID_ID = "androidId";
     final static String DEVICE_ID_TYPE_DAS = "das";
-    private final static String LEGACY_PUSH_LISTENER_PATH = "com.leanplum.LeanplumPushListenerService";
-    private Class legacyPushListener = null;
-    /**
-     * Enable/disable Firebase. Defaults to false - Firebase will be used.
-     */
-    private boolean disableFirebase = false;
 
     @Override
     protected List<ReportingMessage> onKitCreate(Map<String, String> settings, Context context) {
-        disableFirebase = isFirebaseDisabled();
         String deviceIdType = settings.get(DEVICE_ID_TYPE);
         setDeviceIdType(deviceIdType);
         if (MParticle.getInstance().getEnvironment().equals(MParticle.Environment.Development)) {
@@ -157,31 +148,6 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         //Leanplum doesn't have the notion of opt-out.
         return null;
     }
-
-    @Override
-    public boolean willHandlePushMessage(Intent intent) {
-        return intent.getExtras().containsKey("lp_version");
-    }
-
-    @Override
-    public void onPushMessageReceived(Context context, Intent intent) {
-        if (disableFirebase && legacyPushListener != null) {
-            Intent service = new Intent(context, legacyPushListener);
-            service.setAction("com.google.android.c2dm.intent.RECEIVE");
-            service.putExtras(intent);
-            context.startService(service);
-        }
-    }
-
-    @Override
-    public boolean onPushRegistration(String instanceId, String senderId) {
-        if (disableFirebase) {
-            LeanplumPushService.setGcmSenderId(senderId);
-            LeanplumPushService.setGcmRegistrationId(instanceId);
-        }
-        return true;
-    }
-
 
     @Override
     public void setUserAttribute(String key, String value) {
@@ -304,14 +270,5 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.PushLi
         } else if (DEVICE_ID_TYPE_DAS.equals(deviceIdType)) {
             Leanplum.setDeviceId(MParticle.getInstance().Identity().getDeviceApplicationStamp());
         }
-    }
-
-    private boolean isFirebaseDisabled() {
-        try {
-            legacyPushListener = Class.forName(LEGACY_PUSH_LISTENER_PATH);
-            return true;
-        } catch (ClassNotFoundException ignore) {
-        }
-        return false;
     }
 }
