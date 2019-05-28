@@ -25,5 +25,5 @@ dependencies {
     testImplementation 'org.powermock:powermock-api-mockito:1.6.2'
     testImplementation 'org.powermock:powermock-core:1.6.2'
 
-    api 'com.leanplum:leanplum-fcm:4.1.1'
+    api 'com.leanplum:leanplum-fcm:4.2.6'
 }
