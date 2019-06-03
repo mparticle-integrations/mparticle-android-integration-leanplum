@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener {
+public class LeanplumKit extends KitIntegration implements KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener, KitIntegration.PushListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
     final static String USER_ID_FIELD_KEY = "userIdField";
@@ -270,5 +270,21 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Attrib
         } else if (DEVICE_ID_TYPE_DAS.equals(deviceIdType)) {
             Leanplum.setDeviceId(MParticle.getInstance().Identity().getDeviceApplicationStamp());
         }
+    }
+
+    @Override
+    public boolean willHandlePushMessage(Intent intent) {
+        return intent.getExtras().containsKey("lp_version");
+    }
+
+    @Override
+    public void onPushMessageReceived(Context context, Intent intent) {
+        //Firebase only
+    }
+
+    @Override
+    public boolean onPushRegistration(String s, String s1) {
+        //Firebase only
+        return false;
     }
 }
