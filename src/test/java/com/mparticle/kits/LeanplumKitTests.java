@@ -6,17 +6,13 @@ import android.content.Context;
 import com.leanplum.Leanplum;
 import com.leanplum.LeanplumDeviceIdMode;
 import com.mparticle.MParticle;
-import com.mparticle.identity.IdentityApi;
+import com.mparticle.MockMParticle;
 import com.mparticle.identity.MParticleUser;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 
-@RunWith(PowerMockRunner.class)
 public class LeanplumKitTests {
 
     private KitIntegration getKit() {
@@ -138,15 +133,14 @@ public class LeanplumKitTests {
     }
 
     @Test
-    @PrepareForTest({MParticle.class})
     public void testDeviceIdType() {
-        PowerMockito.mockStatic(MParticle.class);
+        MockMParticle mparticle = new MockMParticle();
+        MParticle.setInstance(mparticle);
 
         String mockDas = "mockDasValue";
-        PowerMockito.when(MParticle.getInstance()).thenReturn(Mockito.mock(MParticle.class));
-        Mockito.when(MParticle.getInstance().Identity()).thenReturn(Mockito.mock(IdentityApi.class));
         Mockito.when(MParticle.getInstance().Identity().getDeviceApplicationStamp()).thenReturn(mockDas);
-        PowerMockito.when(MParticle.isAndroidIdDisabled()).thenReturn(false);
+
+        mparticle.setAndroidIdDisabled(false);
 
         LeanplumKit leanplumKit = new LeanplumKit();
 
@@ -178,7 +172,7 @@ public class LeanplumKitTests {
 
         Leanplum.clear();
 
-        PowerMockito.when(MParticle.isAndroidIdDisabled()).thenReturn(true);
+        mparticle.setAndroidIdDisabled(true);
         leanplumKit.setDeviceIdType(LeanplumKit.DEVICE_ID_TYPE_ANDROID_ID);
         assertNull(Leanplum.getMode());
         assertNull(Leanplum.getDeviceId());
