@@ -25,7 +25,7 @@ repositories {
     maven { url 'https://repo.leanplum.com' }
 }
 dependencies {
-    testImplementation 'org.mockito:mockito-android:2.18.3'
+    testImplementation 'org.mockito:mockito-android:3.5.11'
 
     api 'com.leanplum:leanplum-fcm:5.4.1'
 }
