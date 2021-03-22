@@ -14,6 +14,7 @@ import com.mparticle.MPEvent;
 import com.mparticle.MParticle;
 import com.mparticle.commerce.CommerceEvent;
 import com.mparticle.commerce.Product;
+import com.mparticle.consent.ConsentState;
 import com.mparticle.identity.MParticleUser;
 import com.mparticle.internal.Logger;
 
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class LeanplumKit extends KitIntegration implements KitIntegration.AttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener, KitIntegration.PushListener {
+public class LeanplumKit extends KitIntegration implements KitIntegration.UserAttributeListener, KitIntegration.EventListener, KitIntegration.CommerceListener, KitIntegration.IdentityListener, KitIntegration.PushListener {
     private final static String APP_ID_KEY = "appId";
     private final static String CLIENT_KEY_KEY = "clientKey";
     final static String USER_ID_FIELD_KEY = "userIdField";
@@ -110,7 +111,6 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Attrib
             Leanplum.setUserId(userId);
         }
         //then set the attributes of the new user
-        //then set the attributes of the new user
         try {
             mParticleUser.getUserAttributes(new com.mparticle.UserAttributeListener() {
                 @Override
@@ -162,16 +162,28 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Attrib
     }
 
     @Override
-    public void setUserAttribute(String key, String value) {
+    public void onSetUserAttribute(String key, Object value, FilteredMParticleUser user) {
         Map<String, Object> attributes = new HashMap<String, Object>(1);
         attributes.put(key, value);
         Leanplum.setUserAttributes(attributes);
     }
 
     @Override
-    public void setUserAttributeList(String key, List<String> list) {
+    public void onSetUserTag(String s, FilteredMParticleUser filteredMParticleUser) {
+
+    }
+
+    @Override
+    public void onSetUserAttributeList(String key, List<String> list, FilteredMParticleUser user) {
         Map<String, Object> attributes = new HashMap<String, Object>(1);
         attributes.put(key, list);
+        Leanplum.setUserAttributes(attributes);
+    }
+
+    @Override
+    public void onIncrementUserAttribute(String key, int incrementedBy, String newValue, FilteredMParticleUser filteredMParticleUser) {
+        Map<String, Object> attributes = new HashMap<String, Object>(1);
+        attributes.put(key, newValue);
         Leanplum.setUserAttributes(attributes);
     }
 
@@ -181,31 +193,22 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Attrib
     }
 
     @Override
-    public void setAllUserAttributes(Map<String, String> attributes, Map<String, List<String>> attributeLists) {
+    public void onConsentStateUpdated(ConsentState consentState, ConsentState consentState1, FilteredMParticleUser filteredMParticleUser) {
+
+    }
+
+    @Override
+    public void onSetAllUserAttributes(Map<String, String> attributes, Map<String, List<String>> attributeLists, FilteredMParticleUser user) {
         //we set user attributes on start so there's no point in doing it here as well.
     }
 
     @Override
-    public void removeUserAttribute(String key) {
+    public void onRemoveUserAttribute(String key, FilteredMParticleUser user) {
         Map<String, Object> attribute = new HashMap<String, Object>(1);
         attribute.put(key, null);
         Leanplum.setUserAttributes(attribute);
     }
 
-    @Override
-    public void setUserIdentity(MParticle.IdentityType identityType, String id) {
-        //handled by IdentityStateListener
-    }
-
-    @Override
-    public void removeUserIdentity(MParticle.IdentityType identityType) {
-        //handled by IdentityStateListener
-    }
-
-    @Override
-    public List<ReportingMessage> logout() {
-        return null;
-    }
     @Override
     public List<ReportingMessage> leaveBreadcrumb(String s) {
         return null;
