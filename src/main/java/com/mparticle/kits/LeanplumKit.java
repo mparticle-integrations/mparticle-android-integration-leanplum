@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
 
+import androidx.annotation.Nullable;
+
 import com.leanplum.Leanplum;
 import com.leanplum.LeanplumActivityHelper;
 import com.leanplum.LeanplumDeviceIdMode;
@@ -101,19 +103,29 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.Attrib
 
     @Override
     public void onUserIdentified(MParticleUser mParticleUser) {
-        Map<MParticle.IdentityType, String> userIdentities = mParticleUser.getUserIdentities();
+        final Map<MParticle.IdentityType, String> userIdentities = mParticleUser.getUserIdentities();
         String userId = generateLeanplumUserId(mParticleUser, getSettings(), userIdentities);
         //first set userId to effectively switch users
         if (!KitUtils.isEmpty(userId)) {
             Leanplum.setUserId(userId);
         }
         //then set the attributes of the new user
-        Map<String, Object> userAttributes = null;
+        //then set the attributes of the new user
         try {
-            userAttributes = mParticleUser.getUserAttributes();
-        }catch (Exception e) {
-            userAttributes = new HashMap<String, Object>();
+            mParticleUser.getUserAttributes(new com.mparticle.UserAttributeListener() {
+                @Override
+                public void onUserAttributesReceived(@Nullable Map<String, String> userAttributeSingles, @Nullable Map<String, List<String>> userAttributeLists, @Nullable Long mpid) {
+                    Map<String, Object> userAttributes = new HashMap(userAttributeSingles);
+                    userAttributes.putAll(userAttributeLists);
+                    setLeanplumUserAttributes(userIdentities, userAttributes);
+                }
+            });
+        } catch (Exception e) {
+            Logger.warning(e, "Unable to fetch User Attributes");
         }
+    }
+
+    private void setLeanplumUserAttributes(Map<MParticle.IdentityType, String> userIdentities, Map<String, Object> userAttributes) {
         if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE) && getConfiguration().shouldSetIdentity(MParticle.IdentityType.Email)) {
             if (userIdentities.containsKey(MParticle.IdentityType.Email)) {
                 userAttributes.put(LEANPLUM_EMAIL_USER_ATTRIBUTE, userIdentities.get(MParticle.IdentityType.Email));
