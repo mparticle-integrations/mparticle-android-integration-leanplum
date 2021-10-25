@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
 
@@ -38,7 +38,6 @@ android {
 }
 
 repositories {
-    jcenter()
     // REQUIRED:
     maven {
         url "https://repo.leanplum.com/"
