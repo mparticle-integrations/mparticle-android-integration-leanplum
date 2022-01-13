@@ -12,7 +12,7 @@ public class MockMParticle extends MParticle {
         }
 
         public void setAndroidIdDisabled(boolean disabled) {
-            sAndroidIdDisabled = disabled;
+            sAndroidIdEnabled = !disabled;
         }
 
 }
