@@ -278,7 +278,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.UserAt
     }
 
     void setDeviceIdType(String deviceIdType) {
-        if (DEVICE_ID_TYPE_ANDROID_ID.equals(deviceIdType) && !MParticle.isAndroidIdDisabled()) {
+        if (DEVICE_ID_TYPE_ANDROID_ID.equals(deviceIdType) && MParticle.isAndroidIdEnabled()) {
             Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ANDROID_ID);
         } else if (DEVICE_ID_TYPE_GOOGLE_AD_ID.equals(deviceIdType)) {
             Leanplum.setDeviceIdMode(LeanplumDeviceIdMode.ADVERTISING_ID);
