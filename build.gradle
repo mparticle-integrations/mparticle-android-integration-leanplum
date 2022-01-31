@@ -28,5 +28,5 @@ repositories {
 dependencies {
     testImplementation 'org.mockito:mockito-android:2.18.3'
 
-    api 'com.leanplum:leanplum-fcm:5.8.2'
+    api 'com.leanplum:leanplum-fcm:5.9.0'
 }
