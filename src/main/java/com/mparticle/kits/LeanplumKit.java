@@ -226,7 +226,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.UserAt
 
     @Override
     public List<ReportingMessage> logEvent(MPEvent mpEvent) {
-        Leanplum.track(mpEvent.getEventName(), mpEvent.getInfo());
+        Leanplum.track(mpEvent.getEventName(), mpEvent.getCustomAttributes());
         return Arrays.asList(ReportingMessage.fromEvent(this, mpEvent));
     }
 
@@ -240,7 +240,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.UserAt
     public List<ReportingMessage> logLtvIncrease(BigDecimal valueIncreased, BigDecimal total, String eventName, Map<String, String> attributes) {
         Leanplum.track(eventName, valueIncreased.doubleValue(), attributes);
         List<ReportingMessage> messageList = new LinkedList<ReportingMessage>();
-        messageList.add(ReportingMessage.fromEvent(this, new MPEvent.Builder(eventName, MParticle.EventType.Transaction).info(attributes).build()));
+        messageList.add(ReportingMessage.fromEvent(this, new MPEvent.Builder(eventName, MParticle.EventType.Transaction).customAttributes(attributes).build()));
         return messageList;
     }
 
