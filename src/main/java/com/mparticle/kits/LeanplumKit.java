@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.leanplum.Leanplum;
@@ -112,12 +113,13 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.UserAt
         }
         //then set the attributes of the new user
         try {
-            mParticleUser.getUserAttributes(new com.mparticle.UserAttributeListener() {
+            mParticleUser.getUserAttributes(new com.mparticle.TypedUserAttributeListener() {
                 @Override
-                public void onUserAttributesReceived(@Nullable Map<String, String> userAttributeSingles, @Nullable Map<String, List<String>> userAttributeLists, @Nullable Long mpid) {
-                    Map<String, Object> userAttributes = new HashMap(userAttributeSingles);
-                    userAttributes.putAll(userAttributeLists);
-                    setLeanplumUserAttributes(userIdentities, userAttributes);
+                public void onUserAttributesReceived(@NonNull Map<String, ?> userAttributeSingles, @NonNull Map<String, ? extends List<String>> userAttributeLists, long mpid) {
+                    Map<String, Object> attributes = new HashMap<>();
+                    attributes.putAll(userAttributeSingles);
+                    attributes.putAll(userAttributeLists);
+                    setLeanplumUserAttributes(userIdentities, attributes);
                 }
             });
         } catch (Exception e) {
@@ -181,7 +183,7 @@ public class LeanplumKit extends KitIntegration implements KitIntegration.UserAt
     }
 
     @Override
-    public void onIncrementUserAttribute(String key, int incrementedBy, String newValue, FilteredMParticleUser filteredMParticleUser) {
+    public void onIncrementUserAttribute(String key, Number incrementedBy, String newValue, FilteredMParticleUser filteredMParticleUser) {
         Map<String, Object> attributes = new HashMap<String, Object>(1);
         attributes.put(key, newValue);
         Leanplum.setUserAttributes(attributes);
