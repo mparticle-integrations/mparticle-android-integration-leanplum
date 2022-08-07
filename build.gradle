@@ -1,5 +1,6 @@
 buildscript {
-    if (!project.hasProperty('version') || project.version.equals('unspecified')) {
+    ext.kotlin_version = '1.7.10'
+    if (!project.hasProperty('version') || project.version == 'unspecified') {
         project.version = '+'
     }
 
@@ -11,22 +12,25 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:7.2.2'
         classpath 'com.mparticle:android-kit-plugin:' + project.version
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 apply plugin: 'com.mparticle.kit'
+apply plugin: 'kotlin-android'
 
 android {
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 16
     }
 }
 
 repositories {
     maven { url 'https://repo.leanplum.com' }
+    mavenCentral()
 }
-dependencies {
-    testImplementation 'org.mockito:mockito-android:2.18.3'
 
+dependencies {
+    testImplementation 'org.mockito:mockito-core:4.6.1'
     api 'com.leanplum:leanplum-fcm:5.10.4'
 }
