@@ -45,6 +45,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'org.mockito:mockito-core:4.9.0'
+    testImplementation 'org.mockito:mockito-core:4.10.0'
     api 'com.leanplum:leanplum-fcm:7.0.1'
 }
