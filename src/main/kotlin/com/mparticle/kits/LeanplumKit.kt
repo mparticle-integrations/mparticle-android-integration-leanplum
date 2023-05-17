@@ -24,6 +24,9 @@ import java.util.*
 
 class LeanplumKit : KitIntegration(), UserAttributeListener,
     KitIntegration.EventListener, CommerceListener, IdentityListener, PushListener {
+
+    private var started: Boolean = false
+
     public override fun onKitCreate(
         settings: Map<String, String>,
         context: Context
@@ -31,44 +34,15 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
 
         val deviceIdType = settings[DEVICE_ID_TYPE]
 
-        val userId = MParticle.getInstance()?.Identity()?.currentUser?.let {
-            generateLeanplumUserId(
-                it,
-                settings,
-                userIdentities
-            )
-        }
-
         if (deviceIdType != null) {
             setDeviceIdType(deviceIdType)
         }
         if (MParticle.getInstance()?.environment == MParticle.Environment.Development) {
             Leanplum.setLogLevel(3)
-           Leanplum.setAppIdForDevelopmentMode(settings[APP_ID_KEY], settings[CLIENT_KEY_KEY])
+            Leanplum.setAppIdForDevelopmentMode(settings[APP_ID_KEY], settings[CLIENT_KEY_KEY])
         } else {
             Leanplum.setAppIdForProductionMode(settings[APP_ID_KEY], settings[CLIENT_KEY_KEY])
         }
-
-        if (!allUserAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE)) {
-            if (userIdentities.containsKey(IdentityType.Email)) {
-                allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
-                    userIdentities[IdentityType.Email]
-            } else {
-                allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
-            }
-        }
-        if (!TextUtils.isEmpty(userId)) {
-            if (allUserAttributes.isNotEmpty()) {
-                Leanplum.start(context, userId, allUserAttributes)
-            } else {
-                Leanplum.start(context, userId)
-            }
-        } else if (allUserAttributes.isNotEmpty()) {
-            Leanplum.start(context, allUserAttributes)
-        } else {
-            Leanplum.start(context)
-        }
-        LeanplumActivityHelper.enableLifecycleCallbacks(context.applicationContext as Application)
 
         return listOf(
             ReportingMessage(
@@ -134,23 +108,56 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
         }
     }
 
+
     private fun setLeanplumUserAttributes(
         userIdentities: Map<IdentityType, String>,
         userAttributes: MutableMap<String, Any?>
     ) {
-        if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE) && configuration.shouldSetIdentity(
-                IdentityType.Email
-            )
-        ) {
-            if (userIdentities.containsKey(IdentityType.Email)) {
-                userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = userIdentities[IdentityType.Email]
-            } else {
-                userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
+        if (started) {
+            if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE) && configuration.shouldSetIdentity(
+                    IdentityType.Email
+                )
+            ) {
+                if (userIdentities.containsKey(IdentityType.Email)) {
+                    userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
+                        userIdentities[IdentityType.Email]
+                } else {
+                    userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
+                }
             }
+            Leanplum.setUserAttributes(userAttributes)
+            //per Leanplum - it's a good idea to make sure the SDK refreshes itself
+            Leanplum.forceContentUpdate()
+        } else {
+            val userId = MParticle.getInstance()?.Identity()?.currentUser?.let {
+                generateLeanplumUserId(
+                    it,
+                    settings,
+                    userIdentities
+                )
+            }
+            if (!allUserAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE)) {
+                if (userIdentities.containsKey(IdentityType.Email)) {
+                    allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
+                        userIdentities[IdentityType.Email]
+                } else {
+                    allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
+                }
+            }
+            if (!TextUtils.isEmpty(userId)) {
+                if (allUserAttributes.isNotEmpty()) {
+                    Leanplum.start(context, userId, allUserAttributes)
+                } else {
+                    Leanplum.start(context, userId)
+                }
+            } else if (allUserAttributes.isNotEmpty()) {
+                Leanplum.start(context, allUserAttributes)
+            } else {
+                Leanplum.start(context)
+            }
+            LeanplumActivityHelper.enableLifecycleCallbacks(context.applicationContext as Application)
+            started = true
         }
-        Leanplum.setUserAttributes(userAttributes)
-        //per Leanplum - it's a good idea to make sure the SDK refreshes itself
-        Leanplum.forceContentUpdate()
     }
 
     fun generateLeanplumUserId(
