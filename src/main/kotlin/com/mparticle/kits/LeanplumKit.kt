@@ -25,14 +25,14 @@ import java.util.*
 class LeanplumKit : KitIntegration(), UserAttributeListener,
     KitIntegration.EventListener, CommerceListener, IdentityListener, PushListener {
 
-    private var started: Boolean = false
-
     public override fun onKitCreate(
         settings: Map<String, String>,
         context: Context
     ): List<ReportingMessage> {
 
         val deviceIdType = settings[DEVICE_ID_TYPE]
+
+        val userId = generateLeanplumId()
 
         if (deviceIdType != null) {
             setDeviceIdType(deviceIdType)
@@ -44,6 +44,17 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
             Leanplum.setAppIdForProductionMode(settings[APP_ID_KEY], settings[CLIENT_KEY_KEY])
         }
 
+        if (!allUserAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE)) {
+            if (userIdentities.containsKey(IdentityType.Email)) {
+                allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
+                    userIdentities[IdentityType.Email]
+            } else {
+                allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
+            }
+        }
+        Leanplum.start(context, userId, allUserAttributes.ifEmpty { null })
+        LeanplumActivityHelper.enableLifecycleCallbacks(context.applicationContext as Application)
+
         return listOf(
             ReportingMessage(
                 this,
@@ -52,6 +63,16 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
                 null
             )
         )
+    }
+
+    private fun generateLeanplumId(): String? {
+        return MParticle.getInstance()?.Identity()?.currentUser?.let {
+            generateLeanplumUserId(
+                it,
+                settings,
+                userIdentities
+            )?.ifEmpty { null }
+        }
     }
 
     override fun onIdentifyCompleted(
@@ -108,56 +129,37 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
         }
     }
 
-
     private fun setLeanplumUserAttributes(
         userIdentities: Map<IdentityType, String>,
         userAttributes: MutableMap<String, Any?>
     ) {
-        if (started) {
-            if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE) && configuration.shouldSetIdentity(
-                    IdentityType.Email
-                )
-            ) {
-                if (userIdentities.containsKey(IdentityType.Email)) {
-                    userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
-                        userIdentities[IdentityType.Email]
-                } else {
-                    userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
-                }
-            }
-            Leanplum.setUserAttributes(userAttributes)
-            //per Leanplum - it's a good idea to make sure the SDK refreshes itself
-            Leanplum.forceContentUpdate()
-        } else {
-            val userId = MParticle.getInstance()?.Identity()?.currentUser?.let {
-                generateLeanplumUserId(
-                    it,
-                    settings,
-                    userIdentities
-                )
-            }
-            if (!allUserAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE)) {
-                if (userIdentities.containsKey(IdentityType.Email)) {
-                    allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
-                        userIdentities[IdentityType.Email]
-                } else {
-                    allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
-                }
-            }
-            if (!TextUtils.isEmpty(userId)) {
-                if (allUserAttributes.isNotEmpty()) {
-                    Leanplum.start(context, userId, allUserAttributes)
-                } else {
-                    Leanplum.start(context, userId)
-                }
-            } else if (allUserAttributes.isNotEmpty()) {
-                Leanplum.start(context, allUserAttributes)
+        if (!userAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE) && configuration.shouldSetIdentity(
+                IdentityType.Email
+            )
+        ) {
+            if (userIdentities.containsKey(IdentityType.Email)) {
+                userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
+                    userIdentities[IdentityType.Email]
             } else {
-                Leanplum.start(context)
+                userAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
             }
-            LeanplumActivityHelper.enableLifecycleCallbacks(context.applicationContext as Application)
-            started = true
         }
+        setAttributesAndCheckId(userAttributes)
+    }
+
+    private fun setAttributesAndCheckId(userAttributes: MutableMap<String, Any?>) {
+        //If by the time onKitCreated was called, userAttributes were not available to create a LeanplumId, creating and setting one
+        if (Leanplum.getUserId().isNullOrEmpty()) {
+            generateLeanplumId()?.let { id ->
+                Leanplum.setUserAttributes(id, userAttributes)
+            } ?: run {
+                Leanplum.setUserAttributes(userAttributes)
+            }
+        } else {
+            Leanplum.setUserAttributes(userAttributes)
+        }
+        //per Leanplum - it's a good idea to make sure the SDK refreshes itself
+        Leanplum.forceContentUpdate()
     }
 
     fun generateLeanplumUserId(
@@ -200,9 +202,9 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
     override fun setOptOut(optedOut: Boolean): List<ReportingMessage> = emptyList()
 
     override fun onSetUserAttribute(key: String, value: Any, user: FilteredMParticleUser) {
-        val attributes = HashMap<String, Any>(1)
+        val attributes = mutableMapOf<String, Any?>()
         attributes[key] = value
-        Leanplum.setUserAttributes(attributes)
+        setAttributesAndCheckId(attributes)
     }
 
     override fun onSetUserTag(s: String, filteredMParticleUser: FilteredMParticleUser) {}
@@ -211,9 +213,9 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
         list: List<String>,
         user: FilteredMParticleUser
     ) {
-        val attributes: MutableMap<String, Any> = HashMap(1)
+        val attributes = mutableMapOf<String, Any?>()
         attributes[key] = list
-        Leanplum.setUserAttributes(attributes)
+        setAttributesAndCheckId(attributes)
     }
 
     override fun onIncrementUserAttribute(
@@ -222,9 +224,9 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
         newValue: String,
         user: FilteredMParticleUser?
     ) {
-        val attributes = HashMap<String, Any>(1)
+        val attributes = mutableMapOf<String, Any?>()
         attributes[attr.key.toString()] = newValue
-        Leanplum.setUserAttributes(attributes)
+        setAttributesAndCheckId(attributes)
     }
 
     override fun supportsAttributeLists(): Boolean = true
@@ -242,13 +244,17 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
         attributeLists: Map<String, List<String>>,
         user: FilteredMParticleUser
     ) {
+        val map = mutableMapOf<String, Any?>()
+        map.putAll(attributes)
+        map.putAll(attributeLists)
+        setAttributesAndCheckId(map)
         //we set user attributes on start so there's no point in doing it here as well.
     }
 
     override fun onRemoveUserAttribute(key: String, user: FilteredMParticleUser) {
-        val attribute: MutableMap<String, Any?> = HashMap(1)
-        attribute[key] = null
-        Leanplum.setUserAttributes(attribute)
+        val attributes = mutableMapOf<String, Any?>()
+        attributes[key] = null
+        setAttributesAndCheckId(attributes)
     }
 
     override fun leaveBreadcrumb(s: String): List<ReportingMessage> = emptyList()
