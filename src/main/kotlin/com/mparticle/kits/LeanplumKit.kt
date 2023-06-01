@@ -12,6 +12,7 @@ import com.mparticle.MPEvent
 import com.mparticle.MParticle
 import com.mparticle.MParticle.IdentityType
 import com.mparticle.TypedUserAttributeListener
+import com.mparticle.UserAttributeListenerType
 import com.mparticle.commerce.CommerceEvent
 import com.mparticle.commerce.Product
 import com.mparticle.consent.ConsentState
@@ -23,7 +24,7 @@ import java.util.*
 
 
 class LeanplumKit : KitIntegration(), UserAttributeListener,
-    KitIntegration.EventListener, CommerceListener, IdentityListener, PushListener {
+    KitIntegration.EventListener, CommerceListener, IdentityListener, PushListener{
 
     public override fun onKitCreate(
         settings: Map<String, String>,
@@ -44,16 +45,11 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
             Leanplum.setAppIdForProductionMode(settings[APP_ID_KEY], settings[CLIENT_KEY_KEY])
         }
 
-        if (!allUserAttributes.containsKey(LEANPLUM_EMAIL_USER_ATTRIBUTE)) {
-            if (userIdentities.containsKey(IdentityType.Email)) {
-                allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] =
-                    userIdentities[IdentityType.Email]
-            } else {
-                allUserAttributes[LEANPLUM_EMAIL_USER_ATTRIBUTE] = null
-            }
-        }
-        Leanplum.start(context, userId, allUserAttributes.ifEmpty { null })
+        //Starting Leanplum with empty map to avoid db query, setting it after calling async fun
+        Leanplum.start(context, userId)
         LeanplumActivityHelper.enableLifecycleCallbacks(context.applicationContext as Application)
+//        currentUser?.getUserAttributes(this)
+        MParticle.getInstance()?.Identity()?.currentUser?.getUserAttributes()
 
         return listOf(
             ReportingMessage(
