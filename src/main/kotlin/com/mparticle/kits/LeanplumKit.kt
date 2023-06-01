@@ -48,7 +48,6 @@ class LeanplumKit : KitIntegration(), UserAttributeListener,
         //Starting Leanplum with empty map to avoid db query, setting it after calling async fun
         Leanplum.start(context, userId)
         LeanplumActivityHelper.enableLifecycleCallbacks(context.applicationContext as Application)
-//        currentUser?.getUserAttributes(this)
         MParticle.getInstance()?.Identity()?.currentUser?.getUserAttributes()
 
         return listOf(
