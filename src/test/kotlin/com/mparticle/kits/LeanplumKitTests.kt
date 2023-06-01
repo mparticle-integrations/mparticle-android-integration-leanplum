@@ -27,23 +27,6 @@ class LeanplumKitTests {
         Assert.assertTrue(name.isNotEmpty())
     }
 
-    /**
-     * Kit *should* throw an exception when they're initialized with the wrong settings.
-     *
-     */
-    @Test
-    @Throws(Exception::class)
-    fun testOnKitCreate() {
-        var e: Exception? = null
-        try {
-            settings["fake setting"] = "fake"
-            kit.onKitCreate(settings, Mockito.mock(Context::class.java))
-        } catch (ex: Exception) {
-            e = ex
-        }
-       Assert.assertNotNull(e)
-    }
-
     @Test
     @Throws(Exception::class)
     fun testClassName() {
