@@ -36,6 +36,9 @@ apply plugin: 'com.mparticle.kit'
 
 android {
     namespace 'com.mparticle.kits.leanplum'
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         minSdkVersion 16
     }

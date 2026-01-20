@@ -1,11 +1,9 @@
 package com.leanplum
 
 object Leanplum {
-
     var mMode: LeanplumDeviceIdMode? = null
     var mAppID: String? = null
     var mAccessKey: String? = null
-
 
     @JvmStatic
     var deviceId: String? = null
@@ -16,7 +14,10 @@ object Leanplum {
     }
 
     @JvmStatic
-    fun setAppIdForProductionMode(appId: String?, accessKey: String?) {
+    fun setAppIdForProductionMode(
+        appId: String?,
+        accessKey: String?,
+    ) {
         mAppID = appId
         mAccessKey = accessKey
     }
