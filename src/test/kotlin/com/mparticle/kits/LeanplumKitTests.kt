@@ -1,6 +1,5 @@
 package com.mparticle.kits
 
-import android.content.Context
 import com.leanplum.Leanplum
 import com.leanplum.LeanplumDeviceIdMode
 import com.mparticle.MParticle
@@ -19,7 +18,6 @@ class LeanplumKitTests {
     private val settings = HashMap<String, String>()
     private val userIdentities = HashMap<IdentityType, String>()
     private val mockConfiguration = Mockito.mock(KitConfiguration::class.java)
-
 
     @Test
     @Throws(Exception::class)
@@ -46,7 +44,6 @@ class LeanplumKitTests {
     @Test
     @Throws(Exception::class)
     fun testGenerateMpidUserId() {
-
         settings[LeanplumKit.USER_ID_FIELD_KEY] = LeanplumKit.USER_ID_MPID_VALUE
         userIdentities[IdentityType.Email] = "foo email"
         userIdentities[IdentityType.CustomerId] = "foo customer id"
@@ -63,20 +60,20 @@ class LeanplumKitTests {
     @Test
     @Throws(Exception::class)
     fun testGenerateEmailUserId() {
-
         settings[LeanplumKit.USER_ID_FIELD_KEY] = LeanplumKit.USER_ID_EMAIL_VALUE
         userIdentities[IdentityType.Email] = "foo email"
         userIdentities[IdentityType.CustomerId] = "foo customer id"
 
         Mockito.`when`(user.id).thenReturn(5L)
 
-        Mockito.`when`(
-            mockConfiguration.shouldSetIdentity(
-                ArgumentMatchers.any(
-                    IdentityType::class.java
-                )
-            )
-        ).thenReturn(true)
+        Mockito
+            .`when`(
+                mockConfiguration.shouldSetIdentity(
+                    ArgumentMatchers.any(
+                        IdentityType::class.java,
+                    ),
+                ),
+            ).thenReturn(true)
         kit.configuration = mockConfiguration
         var id = kit.generateLeanplumUserId(user, settings, userIdentities)
         Assert.assertEquals("foo email", id)
@@ -88,20 +85,20 @@ class LeanplumKitTests {
     @Test
     @Throws(Exception::class)
     fun testGenerateCustomerIdlUserId() {
-
         settings[LeanplumKit.USER_ID_FIELD_KEY] = LeanplumKit.USER_ID_CUSTOMER_ID_VALUE
         userIdentities[IdentityType.Email] = "foo email"
         userIdentities[IdentityType.CustomerId] = "foo customer id"
 
         Mockito.`when`(user.id).thenReturn(5L)
 
-        Mockito.`when`(
-            mockConfiguration.shouldSetIdentity(
-                ArgumentMatchers.any(
-                    IdentityType::class.java
-                )
-            )
-        ).thenReturn(true)
+        Mockito
+            .`when`(
+                mockConfiguration.shouldSetIdentity(
+                    ArgumentMatchers.any(
+                        IdentityType::class.java,
+                    ),
+                ),
+            ).thenReturn(true)
         kit.configuration = mockConfiguration
         var id = kit.generateLeanplumUserId(user, settings, userIdentities)
         Assert.assertEquals("foo customer id", id)
@@ -115,7 +112,8 @@ class LeanplumKitTests {
         val mparticle = MockMParticle()
         MParticle.setInstance(mparticle)
         val mockDas = "mockDasValue"
-        Mockito.`when`(MParticle.getInstance()?.Identity()?.deviceApplicationStamp)
+        Mockito
+            .`when`(MParticle.getInstance()?.Identity()?.deviceApplicationStamp)
             .thenReturn(mockDas)
         mparticle.setAndroidIdDisabled(false)
 
